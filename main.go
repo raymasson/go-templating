@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -38,6 +39,9 @@ func main() {
 
 	// Templates validation
 	templatesValidation()
+
+	// Sub-Templates
+	subTemplates()
 
 	// Web page
 	r := mux.NewRouter().StrictSlash(true)
@@ -77,8 +81,8 @@ func simpleTemplate() {
 	t, _ = t.Parse("hello {{.FirstName}}!")
 	u := user{FirstName: "Ray"}
 	t.Execute(os.Stdout, u)
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println()
+	fmt.Println()
 }
 
 func nestedFieldsTemplate() {
@@ -101,8 +105,8 @@ func nestedFieldsTemplate() {
 		Emails:  []string{"rmatbeego.me", "raymassatgmail.com"},
 		Friends: []friend{f1, f2}}
 	t.Execute(os.Stdout, u)
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println()
+	fmt.Println()
 }
 
 func conditionsTemplate() {
@@ -119,8 +123,8 @@ func conditionsTemplate() {
 	tIfElse = template.Must(tIfElse.Parse("if-else demo: {{if `anything`}} if part {{else}} else part.{{end}}\n"))
 	tIfElse.Execute(os.Stdout, nil)
 
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println()
+	fmt.Println()
 }
 
 func variablesTemplate() {
@@ -136,8 +140,8 @@ func variablesTemplate() {
 	t3 := template.New("Variables example 3")
 	t3 = template.Must(t3.Parse(`{{with $x := "output"}}{{$x | printf "%q"}}{{end}}`))
 	t3.Execute(os.Stdout, nil)
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println()
+	fmt.Println()
 }
 
 func templatesValidation() {
@@ -149,9 +153,36 @@ func templatesValidation() {
 	template.Must(template.New("second").Parse("some static text {{ .Name }}"))
 	fmt.Println("The second one parsed OK.")
 
-	fmt.Println("The next one ought to fail.")
+	/*fmt.Println("The next one ought to fail.")
 	tErr := template.New("check parse error with Must")
-	template.Must(tErr.Parse(" some static text {{ .Name }"))
-	fmt.Println("")
-	fmt.Println("")
+	template.Must(tErr.Parse(" some static text {{ .Name }"))*/
+	fmt.Println()
+	fmt.Println()
+}
+
+func subTemplates() {
+	var allFiles []string
+	files, err := ioutil.ReadDir("./templates")
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, file := range files {
+		filename := file.Name()
+		if strings.HasSuffix(filename, ".tmpl") {
+			allFiles = append(allFiles, "./templates/"+filename)
+		}
+	}
+
+	templates, err := template.ParseFiles(allFiles...)
+
+	s1 := templates.Lookup("header.tmpl")
+	s1.ExecuteTemplate(os.Stdout, "header", nil)
+	fmt.Println()
+	s2 := templates.Lookup("content.tmpl")
+	s2.ExecuteTemplate(os.Stdout, "content", nil)
+	fmt.Println()
+	s3 := templates.Lookup("footer.tmpl")
+	s3.ExecuteTemplate(os.Stdout, "footer", nil)
+	fmt.Println()
+	s3.Execute(os.Stdout, nil)
 }
